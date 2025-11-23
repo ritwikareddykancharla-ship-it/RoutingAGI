@@ -1,146 +1,133 @@
 # 🚚 RoutingAGI: Neural Optimization for Middle-Mile Logistics  
-### 🧠 Graphormer + Mamba + Constraint-Aware MoE for Large-Scale Routing
+### Graphormer + Mamba + Constraint-Aware MoE for Large-Scale Routing
 
-RoutingAGI is a research framework that investigates **neural surrogates** for large-scale middle-mile routing optimization, inspired by real operational challenges in Amazon Transportation (SCOT, ATS, Middle Mile Science).  
-It integrates **graph-aware encoders**, **state-space sequence models**, **constraint-aligned experts**, and **world-model forecasting** to approximate MILP-like routing behavior.
+RoutingAGI is a research framework exploring **neural surrogates** for middle-mile routing optimization.  
+Inspired by real operational challenges in Amazon Transportation (SCOT, ATS, Middle Mile Science), the system blends:
 
-💡 The goal is to explore whether deep learning can capture the **structure, constraints, feasibility patterns, and multi-objective trade-offs** present in real logistics networks.
+- graph-aware spatial encoders  
+- selective state-space sequence models  
+- constraint-aligned expert modules  
+- learned world-model forecasting  
 
-> ⚠️ RoutingAGI is a **research prototype**, intended for experimentation and hybrid optimization—not production deployment.
+to approximate MILP-like routing behavior in a differentiable, scalable way.
+
+💡 The goal is to understand whether deep learning can capture the **structure, constraints, and multi-objective trade-offs** fundamental to real logistics networks.
+
+> This project is **research-oriented** — intended for experimentation, analysis, and hybrid optimization workflows.
 
 ---
 
 ## 🔍 Problem Motivation
 
-Middle-mile routing involves shipping between FC → SC → DS → Hubs while respecting:
+Middle-mile routing (FC → SC → DS → Hubs) must respect:
 
-- 🚛 trailer & container capacities  
-- ⏱️ time windows, cutoffs, SLAs  
-- 🛣️ lane legality & mode constraints (air/ground)  
-- ⚙️ sort-center throughput & bottlenecks  
-- 🌍 region-level routing rules  
-- ⚖️ load balancing  
-- 🚚 equipment & trailer availability  
-- 💰 multi-objective operational costs  
+- trailer & container capacity  
+- time windows, cutoffs, SLAs  
+- lane legality & mode constraints  
+- sort-center throughput limits  
+- region-level routing policies  
+- load balancing  
+- trailer & equipment availability  
+- multi-objective cost structures  
 
-Traditional MILPs struggle under:
+Traditional MILP optimizers struggle with:
 
-- large, dynamic networks  
-- real-time decision needs  
-- stochastic demand  
+- highly dynamic networks  
+- real-time routing decisions  
 - multi-step forecasting  
-- non-linear constraints  
+- non-linear congestion effects  
+- multi-region combinatorial complexity  
 
-RoutingAGI explores whether neural networks can act as **fast, differentiable surrogates** that:
+RoutingAGI investigates whether neural models can become **fast differentiable surrogates** capable of:
 
-- estimate feasibility and constraint violations  
-- compress combinatorial decision spaces  
-- support routing search or RL  
-- simulate future network states  
-- learn operational patterns from data  
+- estimating feasibility or constraint violations  
+- compressing combinatorial decision spaces  
+- forecasting routing state evolution  
+- supporting RL, heuristics, or hybrid search  
+- learning real routing patterns from data  
 
 ---
 
 ## 🧠 Architecture Overview
 
-## Graphormer Encoder → Mamba Block → Constraint-Aware MoE → World Model → Decoder
-
+```
+Graphormer Encoder → Mamba Block → Constraint-Aware MoE → World Model → Decoder
+```
 
 ---
 
-### **1. 🗺️ Graphormer Encoder**
-Learns structural and spatial routing features:
+### **1. Graphormer Encoder**
+Learns spatial and structural routing information, including:
 
 - facility type embeddings (FC, SC, DS, Hubs)  
-- lane types & legality  
-- shortest-path and distance encodings  
-- centrality, connectivity, and congestion signals  
-- multi-hop relational context  
+- lane legality and mode attributes  
+- shortest-path encoding  
+- structural centrality and connectivity  
+- congestion and throughput signals  
 
 ---
 
-### **2. ⚡ Mamba Block (Selective State-Space Model)**
-Provides temporal reasoning with linear-time scaling:
+### **2. Mamba Block (Selective State-Space Model)**
+Handles temporal interactions such as:
 
 - SLA propagation  
 - congestion ripple effects  
 - equipment availability drift  
 - scheduling dependencies  
 
-Mamba’s **selective gating + dynamic filters** make it powerful for operational sequences.
+Mamba’s **dynamic filters + selective gating** allow efficient long-range operational reasoning.
 
 ---
 
-### **3. 🧩 Constraint-Aware Mixture-of-Experts**
-Each expert models a MILP constraint through activation geometry.
+### **3. Constraint-Aware MoE Layer**
+Each expert corresponds to a MILP constraint, using activation functions aligned with its mathematical shape:
 
-| Constraint | Activation | Why |
-|-----------|------------|-----|
-| 📦 Capacity | ReLU / Softplus | hinge-shaped overload |
-| ⏱️ Time Windows | ReLU | lateness hinge |
-| ❌ Lane Legality | Sigmoid | binary feasibility |
-| ⚙️ Throughput | Tanh / Sigmoid | saturating bottlenecks |
-| 🚨 SLA Risk | Softplus | convex penalty |
-| 🔁 Flow Conservation | Linear | equality constraint |
-| 🌍 Region Rules | Softmax | categorical transitions |
-| ⚖️ Load Balancing | Softplus | convex overload |
-| 🚚 Trailer Availability | ReLU | piecewise linear |
+| Constraint | Activation | Rationale |
+|-----------|------------|-----------|
+| Capacity | ReLU / Softplus | hinge-like overload penalty |
+| Time Windows | ReLU | lateness hinge |
+| Lane Legality | Sigmoid | binary feasibility |
+| Throughput | Tanh / Sigmoid | saturating bottlenecks |
+| SLA Risk | Softplus | convex exponential penalty |
+| Flow Conservation | Linear | equality constraint |
+| Region Rules | Softmax | categorical transitions |
+| Load Balancing | Softplus | convex overload |
+| Trailer Availability | ReLU | piecewise shortage |
 
-This layer injects **mathematical constraint structure** directly into the network.
-
----
-
-### **4. 🔮 World Model**
-Forecasts routing state evolution:
-
-- congestion & queue buildup  
-- SLA slack drift  
-- trailer shortages  
-- sort-center saturation  
-- cross-dock propagation  
-
-Enables multi-step simulation & planning.
-
----
-
-### **5. 🎛️ Decoder**
-Outputs routing-relevant predictions:
-
-- constraint violation likelihood  
-- feasibility scores  
-- route-embedding vectors  
-- logits for downstream decision modules  
+This injects **constraint geometry** directly into the model.
 
 ---
 
 ## 📦 Repository Structure
+
+```
 routing_agi/
 │
 ├── modules/
-│ ├── graph_encoder.py
-│ ├── mamba_block.py
-│ ├── constraint_moe.py
-│ ├── world_model.py
-│ ├── decoder_block.py
-│ └── routing_agi_model.py
+│   ├── graph_encoder.py
+│   ├── mamba_block.py
+│   ├── constraint_moe.py
+│   ├── world_model.py
+│   ├── decoder_block.py
+│   └── routing_agi_model.py
 │
 ├── data/
-│ ├── dataset_builder.py
-│ ├── collator.py
-│ └── milp_targets.py
+│   ├── dataset_builder.py
+│   ├── collator.py
+│   └── milp_targets.py
 │
 ├── training/
-│ ├── train_loop.py
-│ ├── optimizer.py
-│ └── evaluation.py
+│   ├── train_loop.py
+│   ├── optimizer.py
+│   └── evaluation.py
 │
 ├── config/
-│ ├── model_config.py
-│ └── constraint_registry.py
+│   ├── model_config.py
+│   └── constraint_registry.py
 │
 ├── RoutingAGI_Training.ipynb
 └── README.md
-
+```
 
 ---
 
@@ -148,29 +135,30 @@ routing_agi/
 
 Use the included notebook:
 
+```
 RoutingAGI_Training.ipynb
-
+```
 
 It provides:
 
 - GitHub cloning  
-- dataset + dataloader creation  
-- model construction  
-- training & evaluation  
-- HuggingFace upload support  
+- dataset & dataloader creation  
+- model assembly  
+- training + evaluation  
+- optional HuggingFace upload  
 
 ---
 
 ## 🎯 Research Questions
 
-RoutingAGI enables exploration of questions like:
+RoutingAGI explores:
 
-- Can neural models approximate MILP structure through activations?  
-- Do constraint-specific experts improve feasibility prediction?  
+- Can neural networks approximate MILP constraint geometry?  
+- Do constraint-aligned experts improve feasibility prediction?  
 - Can world models capture multi-step operational drift?  
-- How do Graphormer + Mamba hybrids perform in routing environments?  
-- Can differentiable models accelerate search or RL planning?  
-- Can this help build AGI-grade routing intelligence?
+- Are Graphormer + Mamba hybrids effective for routing?  
+- Can differentiable surrogates accelerate routing search or RL?  
+- What does “neural routing intelligence” look like at scale?  
 
 ---
 
@@ -180,7 +168,7 @@ RoutingAGI enables exploration of questions like:
 - NetworkX  
 - tqdm  
 - huggingface_hub  
-- lion-pytorch (optional)
+- lion-pytorch *(optional)*  
 
 ---
 
@@ -193,5 +181,4 @@ MIT License.
 ## ✨ Author
 
 **Ritwika Kancharla**  
-Applied Scientist — Neural Optimization & Routing Models 🚛🧠✨
-
+Applied Scientist — Neural Optimization & Routing Models
